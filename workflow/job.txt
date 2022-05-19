@@ -10,16 +10,16 @@ set -euo pipefail
 mkdir -p "backup"
 
 # Main snakemake command, writing stats to backup folder
-#snakemake -s workflow/assembly.smk -j 4 --use-conda --latency-wait 60 --printshellcmds --stats "backup/stats_assembly.json"
-
-# Snakemake command to create report in backup folder
-#snakemake -s workflow/assembly.smk -j 4 --use-conda --report "backup/report_assembly.html"
+snakemake -s workflow/assembly.smk -j 16 --use-conda --latency-wait 600 --keep-going --printshellcmds --stats "backup/stats_assembly.json"
 
 # Perform QC
-#python workflow/scripts/qc.py --species "Streptococcus pyogenes" --output "backup/qc_report_spyo.tsv"
+python workflow/scripts/qc.py --species "Streptococcus pyogenes" --output "backup/qc_report_spyo.tsv"
 
 # Typing snakemake command
-snakemake -s workflow/typing.smk -j 4 --use-conda --latency-wait 60 --printshellcmds --stats "backup/stats_typing.json" --notemp
+snakemake -s workflow/typing.smk -j 16 --use-conda --latency-wait 600 --keep-going --printshellcmds --stats "backup/stats_typing.json" --notemp
+
+# Snakemake command to create report in backup folder
+snakemake -s workflow/assembly.smk -j 4 --use-conda --report "backup/report_assembly.html"
 
 # Snakemake command to create report in backup folder
 snakemake -s workflow/typing.smk -j 4 --use-conda --report "backup/report_typing.html"

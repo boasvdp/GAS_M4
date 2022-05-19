@@ -1,6 +1,6 @@
 backup
 complete_genomes
-input
+input/*
 logs
 output
 reads

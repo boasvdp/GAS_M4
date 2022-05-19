@@ -7,7 +7,7 @@ kraken:
 # Shovill config for SLURM nodes (requires >64 Gb!)
 shovill:
  minlen: "500"
- ram: "12"
+ ram: "64"
  depth: "100"
  assembler: "spades"
  gsize: "1.8M"
