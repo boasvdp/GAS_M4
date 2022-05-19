@@ -1,0 +1,37 @@
+# Kraken config: only output report (not raw output), input is paired, gzipped data
+# Location of kraken2 database is provided
+kraken:
+ general: "--output - --gzip-compressed --paired"
+ db: "$HOME/kraken_db_nohuman"
+
+# Shovill config for SLURM nodes (requires >64 Gb!)
+shovill:
+ minlen: "500"
+ ram: "12"
+ depth: "100"
+ assembler: "spades"
+ gsize: "1.8M"
+
+pubmlst:
+ spyo_mlst_scheme: "https://rest.pubmlst.org/db/pubmlst_spyogenes_seqdef/schemes/1/sequence"
+ spyo_mlst_loci: "gki,gtr,murI,mutS,recP,xpt,yqiL"
+
+abricate:
+ datadir: "workflow/db"
+ minid: 80
+ mincov: 80
+ capsule_db: "Spyo_capsule"
+ emm4_db: "emm4"
+ vfdb_db: "vfdb"
+ GAS_M4_vf_db: "GAS_M4_vf"
+ GAS_M4_nga_ifs_slo_db: "GAS_M4_nga_ifs_slo"
+
+snippy:
+ general: "--force --cleanup"
+
+bakta:
+ db: "$HOME/bakta_db/db"
+ min_length: "500"
+
+pyseer:
+ general: "--no-distances --min-af 0.05 --max-af 0.95 --print-samples"

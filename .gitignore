@@ -1,0 +1,13 @@
+backup
+complete_genomes
+input
+logs
+output
+reads
+slurm
+test
+tmp_data
+.snakemake
+workflow/references/*.swp
+workflow/scripts/maskrc-svg.py
+workflow/scripts/count_patterns.py

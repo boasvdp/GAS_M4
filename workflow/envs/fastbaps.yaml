@@ -1,0 +1,7 @@
+channels:
+- bioconda
+- conda-forge
+dependencies:
+- r-fastbaps=1.0.4
+- r-ape=5.4
+
