@@ -1,10 +1,10 @@
 #!/bin/bash
 
+#SBATCH -N 1
+#SBATCH -t 23:00:00
+
 # Set bash to strict mode etc.
 set -euo pipefail
-
-#SBATCH -N 1
-#SBATCH -t 4-23:00:00
 
 # Create backup directory
 mkdir -p "backup"

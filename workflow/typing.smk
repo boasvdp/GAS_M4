@@ -539,6 +539,7 @@ rule pyseer_pres:
     "slurm/snakemake_logs/pyseer_pres.log"
   shell:
     """
+    bash workflow/scripts/download_count_patterns.sh
     pyseer {params.general} --phenotypes {input.phenotypes} --pres {input.panaroo}/gene_presence_absence.Rtab --output-patterns {output.patterns} 1> {output.selected} 2>{log}
     """
 
@@ -558,6 +559,7 @@ rule pyseer_vcf:
     "slurm/snakemake_logs/pyseer_vcf.log"
   shell:
     """
+    bash workflow/scripts/download_count_patterns.sh
     pyseer {params.general} --phenotypes {input.phenotypes} --vcf {input.vcf} --output-patterns {output.patterns} 1> {output.selected} 2>{log}
     """
 
@@ -577,6 +579,7 @@ rule pyseer_struct:
     "slurm/snakemake_logs/pyseer_struct.log"
   shell:
     """
+    bash workflow/scripts/download_count_patterns.sh
     pyseer {params.general} --phenotypes {input.phenotypes} --pres {input.panaroo}/struct_presence_absence.Rtab --output-patterns {output.patterns} 1> {output.selected} 2>{log}
     """
 

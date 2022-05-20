@@ -294,7 +294,7 @@ rule backup_data:
     cp {input.mlst} tmp_data/.backup/{params.sample}/mlst
     cp {input.coverage} tmp_data/.backup/{params.sample}/coverage
     tar zcvf backup/{params.sample}.tar.gz -C tmp_data/.backup {params.sample}
-    rm -rf tmp_data/.backup
+    rm -rf tmp_data/.backup/{params.sample}
     """
 
 # Summarise the results in a csv file that will be included in the backup
