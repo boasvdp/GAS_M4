@@ -45,6 +45,7 @@ if len(SPYO_SAMPLES) > 0:
   all_output.append("tmp_data/itol_pyseer_hits/pres")
   all_output.append("tmp_data/itol_summary_out")
   all_output.append(expand("tmp_data/bakta_extracted_genes_nga_ifs_slo/{sample}", sample=SPYO_SAMPLES_PASS))
+  all_output.append("tmp_data/SNP_network/SNP_network.graphml")
 
 if len(all_output) == 0:
   print("No samples to process", file=sys.stderr)
@@ -526,7 +527,7 @@ rule convert_phenotype:
 rule pyseer_pres:
   input:
     panaroo = "tmp_data/panaroo_out",
-    phenotypes = "tmp_data/pyseer_phenotype.tsv",
+    phenotypes = "workflow/private/pyseer_new_lineage.tsv",
   output:
     selected = "tmp_data/pyseer_pres/selected.txt",
     patterns = "tmp_data/pyseer_pres/patterns.txt",
@@ -546,7 +547,7 @@ rule pyseer_pres:
 rule pyseer_vcf:
   input:
     vcf = "tmp_data/snippy_core_out/core.vcf",
-    phenotypes = "tmp_data/pyseer_phenotype.tsv",
+    phenotypes = "workflow/private/pyseer_new_lineage.tsv",
   output:
     selected = "tmp_data/pyseer_vcf/selected.txt",
     patterns = "tmp_data/pyseer_vcf/patterns.txt",
@@ -566,7 +567,7 @@ rule pyseer_vcf:
 rule pyseer_struct:
   input:
     panaroo = "tmp_data/panaroo_out",
-    phenotypes = "tmp_data/pyseer_phenotype.tsv",
+    phenotypes = "workflow/private/pyseer_new_lineage.tsv",
   output:
     selected = "tmp_data/pyseer_struct/selected.txt",
     patterns = "tmp_data/pyseer_struct/patterns.txt",
@@ -661,21 +662,6 @@ rule pyseer_to_itol:
     python workflow/scripts/pyseer_hits_itol.py -i {input.struct} -o {output.struct} 2>&1>>{log}
     """
 
-rule itolparser:
-  input:
-    "output/Spyo_typing_summary.csv"
-  output:
-    directory("tmp_data/itol_summary_out")
-  conda:
-    "envs/itolparser.yaml"
-  threads: 16
-  log:
-    "slurm/snakemake_logs/itolparser.log"
-  shell:
-    """
-    itolparser -i {input} -o {output} --ignore emm_gene_position,variant_match --continuous exact_match,non_match -d ','
-    """
-
 rule extract_genes_abricate_nga_ifs_slo:
   input:
     expand("output/genomes/{sample}.fasta", sample=SPYO_SAMPLES),
@@ -709,4 +695,54 @@ rule bakta_extracted_gened_nga_ifs_slo:
   shell:
     """
     bakta --db {params.db} --keep-contig-headers --prefix {params.prefix} --output {output} --genus Streptococcus --species pyogenes --gram '?' --translation-table 11 --locus-tag {params.locustag} --verbose --threads {threads} {input}/{params.prefix}*.out 2>&1>{log}
+    """
+
+rule snp_network:
+  input:
+    normal = "tmp_data/snippy_core_out/core.full.aln",
+    masked = "tmp_data/maskrc_out/masked.aln"    
+  output:
+    normal = "tmp_data/SNP_network/SNP_network.graphml",
+    masked = "tmp_data/SNP_network/SNP_network_masked.graphml"
+  conda:
+    "envs/snp_network.yaml"
+  threads: 16
+  log:
+    "slurm/snakemake_logs/snp_network.log"
+  params:
+  shell:
+    """
+    python workflow/scripts/produce_SNP_network.py -i {input.normal} -o {output.normal} -t 10 2>&1>{log}
+    python workflow/scripts/produce_SNP_network.py -i {input.masked} -o {output.masked} -t 10 2>&1>>{log}
+    """
+
+rule merge_summary_metadata:
+  input:
+    metadata = "workflow/private/metadata_clean.txt",
+    summary = "output/Spyo_typing_summary.csv",
+  output:
+    merged = "workflow/private/summary_metadata.tsv"
+  conda:
+    "envs/python.yaml"
+  log:
+    "slurm/snakemake_logs/merge_summary_metadata.log"
+  threads: 16
+  shell:
+    """
+    python workflow/scripts/merge_summary_metadata.py --metadata {input.metadata} --summary {input.summary} --output {output.merged} 2>&1>{log} 
+    """
+
+rule itolparser:
+  input:
+    "workflow/private/summary_metadata.tsv"
+  output:
+    directory("tmp_data/itol_summary_out")
+  conda:
+    "envs/itolparser.yaml"
+  threads: 16
+  log:
+    "slurm/snakemake_logs/itolparser.log"
+  shell:
+    """
+    itolparser -i {input} -o {output} --ignore emm_gene_position,variant_match,ons_nummer --continuous exact_match,non_match,Isolation_year -d '	'
     """
