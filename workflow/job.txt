@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -N 1
-#SBATCH -t 23:00:00
+#SBATCH -t 3-23:00:00
 
 # Set bash to strict mode etc.
 set -euo pipefail
@@ -16,7 +16,7 @@ snakemake -s workflow/assembly.smk -j 16 --use-conda --latency-wait 600 --keep-g
 python workflow/scripts/qc.py --species "Streptococcus pyogenes" --output "backup/qc_report_spyo.tsv"
 
 # Typing snakemake command
-snakemake -s workflow/typing.smk -j 16 --use-conda --latency-wait 600 --keep-going --printshellcmds --stats "backup/stats_typing.json" --notemp
+snakemake -s workflow/typing.smk -j 16 --use-conda --latency-wait 600 --keep-going --printshellcmds --stats "backup/stats_typing.json" --notemp -R snippy_core
 
 # Snakemake command to create report in backup folder
 snakemake -s workflow/assembly.smk -j 4 --use-conda --report "backup/report_assembly.html"

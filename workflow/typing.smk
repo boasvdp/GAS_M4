@@ -24,6 +24,16 @@ def get_qc_pass_samples_from_qc_report(qc_report_file):
 SPYO_SAMPLES = get_all_samples_from_qc_report('qc_report_spyo.tsv')
 SPYO_SAMPLES_PASS = get_qc_pass_samples_from_qc_report('qc_report_spyo.tsv')
 
+for isolate in ['SRR18923745', 'SRR18923745', 'SRR18923745', 'SRR18923745']:
+  if isolate in SPYO_SAMPLES:
+    SPYO_SAMPLES.remove(isolate)
+  if isolate in SPYO_SAMPLES_PASS:
+    SPYO_SAMPLES_PASS.remove(isolate)
+
+for isolate in ['SRR18932517', 'SRR18917485']:
+  if isolate in SPYO_SAMPLES_PASS:
+    SPYO_SAMPLES_PASS.remove(isolate)
+
 all_output = []
 
 if len(SPYO_SAMPLES) > 0:
@@ -37,15 +47,16 @@ if len(SPYO_SAMPLES) > 0:
   all_output.append(expand("tmp_data/abricate_capsule/{sample}.tsv", sample=SPYO_SAMPLES))
   all_output.append(expand("tmp_data/abricate_vfdb/{sample}.tsv", sample=SPYO_SAMPLES))
   all_output.append("tmp_data/iqtree_masked_out")
-  all_output.append(expand("tmp_data/abricate_GAS_M4_vf/{sample}.tsv", sample=SPYO_SAMPLES))
-  all_output.append("tmp_data/pyseer_phenotype.tsv")
-  all_output.append("tmp_data/pyseer_pres/filtered.txt")
-  all_output.append("tmp_data/pyseer_vcf/filtered.txt")
-  all_output.append("tmp_data/pyseer_struct/filtered.txt")
-  all_output.append("tmp_data/itol_pyseer_hits/pres")
+#  all_output.append(expand("tmp_data/abricate_GAS_M4_vf/{sample}.tsv", sample=SPYO_SAMPLES))
+#  all_output.append("tmp_data/pyseer_phenotype.tsv")
+#  all_output.append("tmp_data/pyseer_pres/filtered.txt")
+#  all_output.append("tmp_data/pyseer_vcf/filtered.txt")
+#  all_output.append("tmp_data/pyseer_struct/filtered.txt")
+#  all_output.append("tmp_data/itol_pyseer_hits/pres")
   all_output.append("tmp_data/itol_summary_out")
   all_output.append(expand("tmp_data/bakta_extracted_genes_nga_ifs_slo/{sample}", sample=SPYO_SAMPLES_PASS))
   all_output.append("tmp_data/SNP_network/SNP_network.graphml")
+  all_output.append(expand("tmp_data/phigaro/{sample}/{sample}.html", sample=SPYO_SAMPLES))
 
 if len(all_output) == 0:
   print("No samples to process", file=sys.stderr)
@@ -140,7 +151,7 @@ rule snippy_SC3_Spyo:
   input:
     r1 = "output/trimmed/{sample}_L001_R1_001_corrected.fastq.gz",
     r2 = "output/trimmed/{sample}_L001_R2_001_corrected.fastq.gz",
-    ref = "workflow/references/Duke.gbk"
+    ref = "workflow/references/HKU360.gbk"
   output:
     directory("tmp_data/snippy_SC3_Spyo/{sample}")
   log:
@@ -190,6 +201,25 @@ rule AMRFinder:
     amrfinder --threads 4 --nucleotide {input} --organism {params.organism} --output {output} 2>&1>{log}    
     """
 
+rule phigaro:
+  input:
+    genome = "output/genomes/{sample}.fasta",
+    config = "workflow/config/phigaro.config"
+  output:
+    html = "tmp_data/phigaro/{sample}/{sample}.html"
+  conda:
+    "envs/phigaro.yaml"
+  params:
+    outname = "output/phigaro/{sample}/{sample}",
+    general = "--not-open"
+  log:
+    "slurm/snakemake_logs/phigaro/{sample}.log"
+  threads: 15
+  shell:
+    """
+    phigaro --config {input.config} --fasta-file {input.genome} --output {params.outname} --extension html,tsv --print-vogs --threads {threads} --save-fasta 2>&1>{log}
+    """
+
 # Find all files to backup and create a tarball with a timestamp
 rule backup_data_spyo:
   input:
@@ -223,7 +253,6 @@ rule typing_summary:
     expand("tmp_data/SC3_SNPs_Spyo/{sample}.tsv", sample=SPYO_SAMPLES),
     expand("tmp_data/emmtyper_Spyo/{sample}.tsv", sample=SPYO_SAMPLES),
     expand("tmp_data/MLST_Spyo/{sample}.tsv", sample=SPYO_SAMPLES),
-    expand("tmp_data/abricate_emm4/{sample}.tsv", sample=SPYO_SAMPLES),
     expand("tmp_data/abricate_vfdb/{sample}.tsv", sample=SPYO_SAMPLES),
     qc_report = "backup/qc_report_spyo.tsv",
     fastbaps = "tmp_data/fastBAPS_multi_out/clusters.csv",
@@ -238,7 +267,7 @@ rule typing_summary:
     "slurm/snakemake_logs/Spyo_typing_summary.log"
   shell:
     """
-    python workflow/scripts/typing_summary.py --species Spyo --sdn abricate_GAS_M4_vf --emm4 abricate_emm4 --fastbaps {input.fastbaps} --qc {input.qc_report} --output {output} --SC3 SC3_SNPs_Spyo --mlst MLST_Spyo --emmtyper emmtyper_Spyo --vfdb abricate_vfdb {params.samples} 2>&1>{log}
+    python workflow/scripts/typing_summary.py --species Spyo --fastbaps {input.fastbaps} --qc {input.qc_report} --output {output} --mlst MLST_Spyo --emmtyper emmtyper_Spyo --vfdb abricate_vfdb {params.samples} 2>&1>{log}
     """
 
 rule panaroo:
@@ -260,7 +289,7 @@ rule panaroo:
 rule snippy_core:
   input:
     snippy_data = expand("tmp_data/snippy_SC3_Spyo/{sample}", sample=SPYO_SAMPLES_PASS),
-    ref = "workflow/references/Duke.gbk"
+    ref = "workflow/references/HKU360.gbk"
   output:
     full = "tmp_data/snippy_core_out/core.full.aln",
     snps = "tmp_data/snippy_core_out/core.aln",
@@ -716,25 +745,25 @@ rule snp_network:
     python workflow/scripts/produce_SNP_network.py -i {input.masked} -o {output.masked} -t 10 2>&1>>{log}
     """
 
-rule merge_summary_metadata:
-  input:
-    metadata = "workflow/private/metadata_clean.txt",
-    summary = "output/Spyo_typing_summary.csv",
-  output:
-    merged = "workflow/private/summary_metadata.tsv"
-  conda:
-    "envs/python.yaml"
-  log:
-    "slurm/snakemake_logs/merge_summary_metadata.log"
-  threads: 16
-  shell:
-    """
-    python workflow/scripts/merge_summary_metadata.py --metadata {input.metadata} --summary {input.summary} --output {output.merged} 2>&1>{log} 
-    """
+#rule merge_summary_metadata:
+#  input:
+#    metadata = "workflow/private/metadata_clean.txt",
+#    summary = "output/Spyo_typing_summary.csv",
+#  output:
+#    merged = "workflow/private/summary_metadata.tsv"
+#  conda:
+#    "envs/python.yaml"
+#  log:
+#    "slurm/snakemake_logs/merge_summary_metadata.log"
+#  threads: 16
+#  shell:
+#    """
+#    python workflow/scripts/merge_summary_metadata.py --metadata {input.metadata} --summary {input.summary} --output {output.merged} 2>&1>{log} 
+#    """
 
 rule itolparser:
   input:
-    "workflow/private/summary_metadata.tsv"
+    "output/Spyo_typing_summary.csv"
   output:
     directory("tmp_data/itol_summary_out")
   conda:
@@ -744,5 +773,5 @@ rule itolparser:
     "slurm/snakemake_logs/itolparser.log"
   shell:
     """
-    itolparser -i {input} -o {output} --ignore emm_gene_position,variant_match,ons_nummer --continuous exact_match,non_match,Isolation_year -d '	'
+    ../sentinel/sentinel_analysis/itolparser/itolparser -i {input} -o {output} --ignore emm_gene_position,variant_match --continuous exact_match,non_match -d ','
     """

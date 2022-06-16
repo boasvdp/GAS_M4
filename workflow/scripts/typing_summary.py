@@ -13,10 +13,7 @@ parser.add_argument('--fastbaps', dest='fastbaps', help="Path to fastBAPS cluste
 parser.add_argument('--mlst', dest="mlst", help="mlst output directory", type=str)
 parser.add_argument('--amrfinder', dest="amrfinder", help="AMRfinder output directory", type=str)
 parser.add_argument('--vfdb', dest="vfdb", help="ABRicate VFDB output directory", type=str)
-parser.add_argument('--sdn', dest="sdn", help="sdn output directory", type=str)
-parser.add_argument('--emm4', dest="emm4", help="ABRicate emm4 output directory", type=str)
 parser.add_argument('--emmtyper', dest="emmtyper", help="emmtyper output directory", type=str, default="emmtyper_Spyo")
-parser.add_argument('--SC3', dest="SC3", help="SC3 mapping output directory", type=str, default="SC3_Spyo")
 parser.add_argument('--output', dest='output', help="Output file", type=str, required=True)
 
 args = parser.parse_args()
@@ -25,7 +22,6 @@ if (args.species == "Streptococcus pyogenes") or (args.species == "Spyo"):
   args.species = "Spyo"
   assert args.mlst is not None
   assert args.emmtyper is not None
-  assert args.SC3 is not None
 
 # Store samples as isolate_list
 isolate_list = list(args.samples)
@@ -78,17 +74,6 @@ def parse_vfdb(gene, lines):
     output_string = output_string + str(i[-1:])
   return output_string
 
-def parse_SC3(row):
-  # Exact matches indicated SC1-2!
-  if row['emm_type'] != 'EMM4.0':
-    return 'non-M4'
-  elif row['non_match'] <= 18:
-    return 'SC1-2'
-  elif row['non_match'] <= 34:
-    return 'intermediate'
-  else:
-    return 'SC3'
-
 def add_qc_results(full_df, qc_df_path):
   qc_df = pd.read_csv(qc_df_path, sep='\t')
   full_df = qc_df.merge(full_df, on='Isolate', how='right', validate='one_to_one')
@@ -118,23 +103,6 @@ def process_spyo(args):
 
     isolate_df = isolate_df.merge(emmtyper_df, on='Isolate', how='left')
 
-    # Get emm4 gene type
-    emm4_path = output_prefix + args.emm4 + '/' + isolate + '.tsv'
-    with open(emm4_path, 'r') as file:
-      lines = file.readlines()
-
-    isolate_df['emm4_gene'] = parse_table('emm4', lines, '-')
-
-    ###### SC3
-    filepath_SC3 = output_prefix + args.SC3 + '/' + isolate + '.tsv'
-    SC3_df = pd.read_csv(filepath_SC3, sep='\t')
-    SC3_df = SC3_df.drop(["38433_A", "74409_T", "121936_C", "127383_A", "203265_C", "206871_T", "276205_G", "398182_C", "426260_C", "456765_T", "460349_T", "529581_C", "654897_A", "748647_C", "801056_A", "838374_T", "969593_A", "982776_A", "1049508_G", "1052307_T", "1054020_T", "1056987_A", "1098575_T", "1110563_A", "1117961_G", "1155420_T", "1194658_A", "1462967_A", "1475294_C", "1560453_T", "1606690_T", "1732434_T", "1735786_G", "1757147_T", "1769786_T", "1789765_T"], axis=1)
-
-    ### Based on emmtyper results and SC3 SNPs, decide non-M4/SC3/SC1-SC2
-    isolate_df = isolate_df.merge(SC3_df, on='Isolate', how='left')
-
-    isolate_df['M4_type'] = isolate_df.apply(parse_SC3, axis=1)
-
     ### Get VFDB results
     filepath = output_prefix + args.vfdb + '/' + isolate + '.tsv'
 
@@ -143,14 +111,6 @@ def process_spyo(args):
 
     for gene in list_vfdb_genes:
       isolate_df[gene] = parse_table(gene, lines, '-')
-
-    ### Get sdn results
-    filepath = output_prefix + args.sdn + '/' + isolate + '.tsv'
-
-    with open(filepath, 'r') as file:
-      lines = file.readlines()
-
-    isolate_df['sdn'] = parse_table('sdn', lines, '-')
 
     full_df = pd.concat([full_df, isolate_df])
 

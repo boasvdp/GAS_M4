@@ -13,3 +13,5 @@ workflow/references/*.swp
 workflow/scripts/maskrc-svg.py
 workflow/scripts/count_patterns.py
 workflow/private
+workflow/config/phigaro.config
+workflow/db/allpvoghmms*

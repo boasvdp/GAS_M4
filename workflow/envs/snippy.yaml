@@ -1,7 +1,9 @@
 channels:
 - bioconda
 - conda-forge
+- defaults
 
 dependencies:
-- snippy=4.6.0
+- snippy=4
 - snpeff=5.0
+- openssl=1.0
