@@ -1,4 +1,4 @@
-# **Streptococcus pyogenes** M4
+# **Streptococcus pyogenes** M12
 
 ## Introduction
 
