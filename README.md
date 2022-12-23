@@ -1,5 +1,5 @@
 # **Streptococcus pyogenes** M4
 
-## Introduction
+This repo describes the workflow used to analyse S. pyogenes emm4 genomes from the Netherlands and other countries.
 
-## Methods
+Publication pending
