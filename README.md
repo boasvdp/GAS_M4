@@ -2,13 +2,15 @@
 
 ## Introduction
 
-This repo describes the workflow used to analyse S. pyogenes emm4 genomes from the Netherlands and other countries. The pipeline stored here is meant for this specific project.
+This repo describes the workflow used to analyse S. pyogenes emm4 genomes from the Netherlands and other countries. The pipeline stored here was written for this specific project.
 
 Publication pending
 
 ## Methods
 
 To use this pipeline, install `snakemake` and `conda` (or better yet, `mamba`).
+
+Additionally, download `kraken2` and `bakta` databases and provide the path to these in `workflow/config/config.yaml`
 
 Download our data from ENA and store the read files in the `reads` directory.
 
