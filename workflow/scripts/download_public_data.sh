@@ -1,4 +1,9 @@
 #!/bin/bash
+
+set -euo pipefail
+
+mkdir -p reads
+
 curl -L ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR189/033/SRR18902433/SRR18902433_1.fastq.gz -o reads/SRR18902433_L001_R1_001.fastq.gz
 curl -L ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR189/033/SRR18902433/SRR18902433_2.fastq.gz -o reads/SRR18902433_L001_R2_001.fastq.gz
 curl -L ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR189/041/SRR18902441/SRR18902441_1.fastq.gz -o reads/SRR18902441_L001_R1_001.fastq.gz
