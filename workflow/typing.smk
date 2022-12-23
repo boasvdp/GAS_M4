@@ -24,6 +24,11 @@ def get_qc_pass_samples_from_qc_report(qc_report_file):
 SPYO_SAMPLES = get_all_samples_from_qc_report('qc_report_spyo.tsv')
 SPYO_SAMPLES_PASS = get_qc_pass_samples_from_qc_report('qc_report_spyo.tsv')
 
+for sample in ['SRR18901851', 'SRR18902164', 'SRR18923739', 'SRR18901761', 'SRR18933960', 'SRR18924291', 'SRR18917623']:
+  if sample in SPYO_SAMPLES_PASS:
+    SPYO_SAMPLES_PASS.remove(sample)
+
+
 all_output = []
 
 if len(SPYO_SAMPLES) > 0:
@@ -46,6 +51,8 @@ if len(SPYO_SAMPLES) > 0:
   all_output.append("tmp_data/itol_summary_out")
   all_output.append(expand("tmp_data/bakta_extracted_genes_nga_ifs_slo/{sample}", sample=SPYO_SAMPLES_PASS))
   all_output.append("tmp_data/SNP_network/SNP_network.graphml")
+  all_output.append(expand("tmp_data/snippy_emm/{sample}", sample=SPYO_SAMPLES_PASS))
+  all_output.append(expand("tmp_data/bakta_extracted_genes_proA/{sample}", sample=SPYO_SAMPLES_PASS))
 
 if len(all_output) == 0:
   print("No samples to process", file=sys.stderr)
@@ -699,8 +706,8 @@ rule bakta_extracted_gened_nga_ifs_slo:
 
 rule snp_network:
   input:
-    normal = "tmp_data/snippy_core_out/core.full.aln",
-    masked = "tmp_data/maskrc_out/masked.aln"    
+    normal = "tmp_data/snp_dists_out/snps.tsv",
+    masked = "tmp_data/snp_dists_out/snps_masked.tsv"
   output:
     normal = "tmp_data/SNP_network/SNP_network.graphml",
     masked = "tmp_data/SNP_network/SNP_network_masked.graphml"
@@ -746,3 +753,78 @@ rule itolparser:
     """
     itolparser -i {input} -o {output} --ignore emm_gene_position,variant_match,ons_nummer --continuous exact_match,non_match,Isolation_year -d '	'
     """
+
+rule snippy_emm:
+  input:
+    r1 = "output/trimmed/{sample}_L001_R1_001_corrected.fastq.gz",
+    r2 = "output/trimmed/{sample}_L001_R2_001_corrected.fastq.gz",
+    ref = "complete_genomes/GCF_019342925.1_ASM1934292v1.fasta"
+  output:
+    directory("tmp_data/snippy_emm/{sample}")
+  log:
+    "slurm/snakemake_logs/snippy_emm/{sample}.log"
+  params:
+    general = config["snippy"]["keepbam"]
+  threads: 16
+  conda: "envs/snippy.yaml"
+  shell:
+    """
+    snippy {params.general} --cpus {threads} --outdir {output} --ref {input.ref} --R1 {input.r1} --R2 {input.r2} 2>&1>{log}
+    """
+
+rule abricate_proA:
+  input:
+    genome = "output/genomes/{sample}.fasta",
+    db = "workflow/db/proA"
+  output:
+    "tmp_data/abricate_proA/{sample}.tsv"
+  conda:
+    "envs/abricate.yaml"
+  params:
+    datadir = config["abricate"]["datadir"],
+    db = config["abricate"]["proA_db"],
+    mincov = config["abricate"]["mincov"],
+    minid = config["abricate"]["minid"],
+  threads: 2
+  log:
+    "slurm/snakemake_logs/abricate_proA/{sample}.log"
+  shell:
+    """
+    abricate --datadir {params.datadir} --db {params.db} --minid {params.minid} --mincov {params.mincov} {input.genome} 1>{output} 2>{log}
+    """
+
+rule extract_genes_abricate_proA:
+  input:
+    expand("output/genomes/{sample}.fasta", sample=SPYO_SAMPLES),
+    abricate = "tmp_data/abricate_proA/{sample}.tsv",
+  output:
+    directory("tmp_data/extracted_genes_proA/{sample}"),
+  conda:
+    "envs/biopython.yaml"
+  threads: 16
+  log:
+    "slurm/snakemake_logs/extract_genes_abricate_proA/{sample}.log"
+  shell:
+    """
+    python workflow/scripts/extract_genes_abricate.py -a {input.abricate} -g output/genomes -o {output} --genecluster --flanking --flanking-bp 6000 2>&1>{log}
+    """
+
+rule bakta_extracted_genes_proA:
+  input:
+    "tmp_data/extracted_genes_proA/{sample}"
+  output:
+    directory("tmp_data/bakta_extracted_genes_proA/{sample}")
+  conda:
+    "envs/bakta.yaml"
+  threads: 8
+  log:
+    "slurm/snakemake_logs/bakta_extracted_gened_proA/{sample}.log"
+  params:
+    prefix = "{sample}",
+    locustag = "{sample}",
+    db = config["bakta"]["db"],
+  shell:
+    """
+    bakta --db {params.db} --keep-contig-headers --prefix {params.prefix} --output {output} --genus Streptococcus --species pyogenes --gram '?' --translation-table 11 --locus-tag {params.locustag} --verbose --threads {threads} {input}/{params.prefix}*.out 2>&1>{log}
+    """
+

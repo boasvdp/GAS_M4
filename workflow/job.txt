@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -N 1
-#SBATCH -t 23:00:00
+#SBATCH -t 4-23:00:00
 
 # Set bash to strict mode etc.
 set -euo pipefail
@@ -10,16 +10,16 @@ set -euo pipefail
 mkdir -p "backup"
 
 # Main snakemake command, writing stats to backup folder
-snakemake -s workflow/assembly.smk -j 16 --use-conda --latency-wait 600 --keep-going --printshellcmds --stats "backup/stats_assembly.json"
+snakemake --ri -s workflow/assembly.smk -j 16 --use-conda --latency-wait 600 --keep-going --printshellcmds --stats "backup/stats_assembly_2.json"
 
 # Perform QC
 python workflow/scripts/qc.py --species "Streptococcus pyogenes" --output "backup/qc_report_spyo.tsv"
 
 # Typing snakemake command
-snakemake -s workflow/typing.smk -j 16 --use-conda --latency-wait 600 --keep-going --printshellcmds --stats "backup/stats_typing.json" --notemp
+snakemake --ri -s workflow/typing.smk -j 16 --use-conda --latency-wait 600 --keep-going --printshellcmds --stats "backup/stats_typing_2.json" --notemp -R panaroo -R typing_summary -R snippy_core
 
 # Snakemake command to create report in backup folder
-snakemake -s workflow/assembly.smk -j 4 --use-conda --report "backup/report_assembly.html"
+snakemake -s workflow/assembly.smk -j 4 --use-conda --report "backup/report_assembly_2.html"
 
 # Snakemake command to create report in backup folder
-snakemake -s workflow/typing.smk -j 4 --use-conda --report "backup/report_typing.html"
+snakemake -s workflow/typing.smk -j 4 --use-conda --report "backup/report_typing_2.html"

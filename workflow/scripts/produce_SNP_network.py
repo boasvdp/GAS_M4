@@ -17,6 +17,9 @@ import networkx as nx
 df = pd.read_csv(args.input, sep = '\t', header=None, names=["isolate_1", "isolate_2", "SNPs"])
 
 df_filt = df.query('isolate_1 != isolate_2 & SNPs <= @args.threshold')[['isolate_1','isolate_2','SNPs']]
+
+print(df_filt.head())
+
 graph = nx.from_pandas_edgelist(df_filt, 'isolate_1', 'isolate_2', 'SNPs')
 
 nx.write_graphml(graph, args.output)

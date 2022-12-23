@@ -3,37 +3,39 @@
 # See https://yaml.org/ for explanation of the YAML format
 configfile: "workflow/config/config.yaml"
 
-# Identify sample names from the R1 read files in the input folder
-# The script check.py should have already checked whether all samples have a single R1 and R2 file associated with it and whether the input folder does not contain other files
-(SAMPLE_NAMES, SAMPLE_NUMBERS) = glob_wildcards("input/{samplename}_{samplenumber}_L001_R1_001.fastq.gz")
+## Identify sample names from the R1 read files in the input folder
+## The script check.py should have already checked whether all samples have a single R1 and R2 file associated with it and whether the input folder does not contain other files
+#(SAMPLE_NAMES, SAMPLE_NUMBERS) = glob_wildcards("input/{samplename}_{samplenumber}_L001_R1_001.fastq.gz")
+#
+## Zip and join together all sample names and numbers. This will be used later on to find files to remove 
+#SAMPLE_NAMES_NUMBERS = ['_'.join([samplename, samplenumber]) for samplename, samplenumber in zip(SAMPLE_NAMES, SAMPLE_NUMBERS)]
 
-# Zip and join together all sample names and numbers. This will be used later on to find files to remove 
-SAMPLE_NAMES_NUMBERS = ['_'.join([samplename, samplenumber]) for samplename, samplenumber in zip(SAMPLE_NAMES, SAMPLE_NUMBERS)]
+SAMPLE_NAMES, = glob_wildcards("reads/{samplename}_L001_R1_001.fastq.gz")
 
 # Define the desired output of the pipeline 
 rule all:
   input:
-    expand("tmp_data/fastqc_pre_out/{sample}_{read}_fastqc.zip", sample=SAMPLE_NAMES, read = ['R1', 'R2']),
-    expand("tmp_data/fastqc_post_out/{sample}_{read}_fastqc.zip", sample=SAMPLE_NAMES, read = ['R1', 'R2']),
-    expand("tmp_data/kraken_out/{sample}.txt", sample=SAMPLE_NAMES),
-    expand("tmp_data/quast_out/{sample}", sample=SAMPLE_NAMES),
-    expand("backup/{sample}.tar.gz", sample=SAMPLE_NAMES),
+#    expand("tmp_data/fastqc_pre_out/{sample}_{read}_fastqc.zip", sample=SAMPLE_NAMES, read = ['R1', 'R2']),
+#    expand("tmp_data/fastqc_post_out/{sample}_{read}_fastqc.zip", sample=SAMPLE_NAMES, read = ['R1', 'R2']),
+#    expand("tmp_data/kraken_out/{sample}.txt", sample=SAMPLE_NAMES),
+#    expand("tmp_data/quast_out/{sample}", sample=SAMPLE_NAMES),
+#    expand("backup/{sample}.tar.gz", sample=SAMPLE_NAMES),
     expand("output/summary.csv"),
 
-# Remove illumina sample numbers from read file names and copy to scratch
-rule move_to_scratch:
-  output:
-    fw = "reads/{samplename}_L001_R1_001.fastq.gz",
-    rv = "reads/{samplename}_L001_R2_001.fastq.gz",
-  log:
-    "slurm/snakemake_logs/move_to_scratch/{samplename}.log"
-  shell:
-    """
-    mkdir -p /scratch/reads
-    cp input/{wildcards.samplename}_S*_L001_R1_001.fastq.gz {output.fw}
-    cp input/{wildcards.samplename}_S*_L001_R2_001.fastq.gz {output.rv}
-    """
-
+## Remove illumina sample numbers from read file names and copy to scratch
+#rule move_to_scratch:
+#  output:
+#    fw = "reads/{samplename}_L001_R1_001.fastq.gz",
+#    rv = "reads/{samplename}_L001_R2_001.fastq.gz",
+#  log:
+#    "slurm/snakemake_logs/move_to_scratch/{samplename}.log"
+#  shell:
+#    """
+#    mkdir -p /scratch/reads
+#    cp input/{wildcards.samplename}_S*_L001_R1_001.fastq.gz {output.fw}
+#    cp input/{wildcards.samplename}_S*_L001_R2_001.fastq.gz {output.rv}
+#    """
+#
 # Run FastQC before read trimming on R1 reads. This uses a Snakemake wrapper
 rule fastqc_pre_R1:
   input:
@@ -302,8 +304,8 @@ rule summary:
   input:
     kraken = expand("tmp_data/kraken_out/{sample}.txt", sample=SAMPLE_NAMES),
     quast = expand("tmp_data/quast_out/{sample}", sample=SAMPLE_NAMES),
-    fastqc_pre = expand("tmp_data/fastqc_pre_out/{sample}_{read}_fastqc.zip", sample=SAMPLE_NAMES, read = ['R1', 'R2']),
-    fastqc_post = expand("tmp_data/fastqc_post_out/{sample}_{read}_fastqc.zip", sample=SAMPLE_NAMES, read = ['R1', 'R2']),
+#    fastqc_pre = expand("tmp_data/fastqc_pre_out/{sample}_{read}_fastqc.zip", sample=SAMPLE_NAMES, read = ['R1', 'R2']),
+#    fastqc_post = expand("tmp_data/fastqc_post_out/{sample}_{read}_fastqc.zip", sample=SAMPLE_NAMES, read = ['R1', 'R2']),
     mlst = expand("tmp_data/mlst_out/{sample}.txt", sample=SAMPLE_NAMES),
     coverage = expand("tmp_data/coverage_out/{sample}.txt", sample=SAMPLE_NAMES),
   output:

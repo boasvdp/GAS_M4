@@ -25,9 +25,11 @@ abricate:
  vfdb_db: "vfdb"
  GAS_M4_vf_db: "GAS_M4_vf"
  GAS_M4_nga_ifs_slo_db: "GAS_M4_nga_ifs_slo"
+ proA_db: "proA"
 
 snippy:
  general: "--force --cleanup"
+ keepbam: "--force"
 
 bakta:
  db: "$HOME/bakta_db/db"
